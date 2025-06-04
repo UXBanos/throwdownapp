@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Throwdown</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --accent: #FFC700;
+    }
+    .accent {
+      color: var(--accent);
+    }
+    .bg-accent {
+      background-color: var(--accent);
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    /* Añade aquí estilos para fondo animado y responsive si quieres */
+  </style>
+</head>
+<body class="bg-black text-white font-sans flex flex-col items-center justify-center min-h-screen p-6">
+  <div class="max-w-xl w-full text-center">
+    <h1 class="text-4xl font-bold mb-2">THROWDOWN</h1>
+    <p class="text-lg text-gray-300 mb-6">Tira del dado. Acepta el reto. Supera tu límite.</p>
+    <button id="generateBtn" class="bg-accent text-black font-bold py-3 px-6 rounded-xl text-lg hover:scale-105 transition mb-8">
+      LANZAR RETO
+    </button>
+    <div id="output" class="bg-gray-900 rounded-xl p-6 hidden">
+      <p class="text-sm text-gray-400">Tipo de entrenamiento:</p>
+      <p id="type" class="text-xl font-semibold mb-4 accent"></p>
+      <p class="text-sm text-gray-400">Duración:</p>
+      <p id="duration" class="mb-4"></p>
+      <p class="text-sm text-gray-400">Rutina:</p>
+      <ul id="routine" class="text-left list-disc list-inside"></ul>
+    </div>
+    <div id="controls" class="flex flex-col gap-3 mt-6 hidden">
+      <button id="harderBtn" class="border border-white py-2 px-4 rounded-xl hover:bg-white hover:text-black transition">Hazlo más duro 🔥</button>
+      <button id="easierBtn" class="border border-white py-2 px-4 rounded-xl hover:bg-white hover:text-black transition">Escala el reto 🛠️</button>
+      <button id="originalBtn" class="border border-white py-2 px-4 rounded-xl hover:bg-white hover:text-black transition hidden">Ver versión original 🔁</button>
+      <button id="anotherBtn" class="border border-white py-2 px-4 rounded-xl hover:bg-white hover:text-black transition">Tírame otro 🎲</button>
+    </div>
+  </div>
+
+  <script>
+    const routines = [
+      {
+        type: "Ladder Ascendente",
+        duration: "20 minutos",
+        base: [
+          "Empieza con 2 pull-ups",
+          "2 push-ups",
+          "2 air squats",
+          "Suma 2 repeticiones por ronda (4, 6, 8...)",
+          "Trabaja durante 20 minutos"
+        ],
+        hard: [
+          "Usa chaleco lastrado (10kg)",
+          "2 pull-ups",
+          "2 push-ups",
+          "2 air squats",
+          "+100m sprint después de cada ronda",
+          "Suma 2 repeticiones por ronda",
+          "Máximo 10 segundos de descanso"
+        ],
+        easy: [
+          "Sustituye pull-ups por ring rows",
+          "2 ring rows",
+          "2 push-ups",
+          "2 air squats",
+          "Suma 2 repeticiones por ronda",
+          "Trabaja durante 15 minutos"
+        ]
+      },
+      {
+        type: "EMOM Cardio + Fuerza",
+        duration: "16 minutos",
+        base: [
+          "Min 1: 12 burpees",
+          "Min 2: 10 KB swings",
+          "Min 3: 12 box jumps",
+          "Min 4: 15 sit-ups",
+          "Repite 4 rondas"
+        ],
+        hard: [
+          "Min 1: 15 burpees",
+          "Min 2: 12 KB swings pesados",
+          "Min 3: 15 box jumps altos",
+          "Min 4: 20 sit-ups con disco",
+          "Repite 4 rondas sin descanso"
+        ],
+        easy: [
+          "Min 1: 10 burpees",
+          "Min 2: 8 KB swings",
+          "Min 3: 10 box step-ups",
+          "Min 4: 10 sit-ups",
+          "Repite 3 rondas"
+        ]
+      }
+    ];
+
+    let currentRoutine = null;
+    let currentVersion = 'base';
+    const output = document.getElementById("output");
+    const type = document.getElementById("type");
+    const duration = document.getElementById("duration");
+    const routine = document.getElementById("routine");
+    const controls = document.getElementById("controls");
+    const originalBtn = document.getElementById("originalBtn");
+
+    function displayRoutine(routineData, version = 'base') {
+      output.classList.remove("hidden");
+      controls.classList.remove("hidden");
+      output.classList.remove("fade-in");
+      void output.offsetWidth; // trigger reflow
+      output.classList.add("fade-in");
+
+      originalBtn.classList.toggle("hidden", version === 'base');
+      currentVersion = version;
+
+      type.textContent = routineData.type + (version !== 'base' ? ` (${version})` : "");
+      duration.textContent = routineData.duration;
+      routine.innerHTML = "";
+      routineData[version].forEach(e => {
+        const li = document.createElement("li");
+        li.textContent = e;
+        routine.appendChild(li);
+      });
+
+      // Guardar en localStorage
+      localStorage.setItem("lastRoutine", JSON.stringify({
+        routineType: routineData.type,
+        version: version,
+        data: routineData[version]
+      }));
+    }
+
+    function getRandomRoutine(excludeRoutine) {
+      let newRoutine;
+      do {
+        newRoutine = routines[Math.floor(Math.random() * routines.length)];
+      } while (newRoutine === excludeRoutine && routines.length > 1);
+      return newRoutine;
+    }
+
+    document.getElementById("generateBtn").addEventListener("click", () => {
+      const random = getRandomRoutine(currentRoutine);
+      currentRoutine = random;
+      displayRoutine(random);
+    });
+
+    document.getElementById("harderBtn").addEventListener("click", () => {
+      if (currentRoutine) displayRoutine(currentRoutine, 'hard');
+    });
+
+    document.getElementById("easierBtn").addEventListener("click", () => {
+      if (currentRoutine) displayRoutine(currentRoutine, 'easy');
+    });
+
+    originalBtn.addEventListener("click", () => {
+      if (currentRoutine) displayRoutine(currentRoutine, 'base');
+    });
+
+    document.getElementById("anotherBtn").addEventListener("click", () => {
+      const random = getRandomRoutine(currentRoutine);
+      currentRoutine = random;
+      displayRoutine(random);
+    });
+
+    // Recuperar última rutina si existe
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("lastRoutine");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const found = routines.find(r => r.type === parsed.routineType);
+        if (found) {
+          currentRoutine = found;
+          displayRoutine(found, parsed.version);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
